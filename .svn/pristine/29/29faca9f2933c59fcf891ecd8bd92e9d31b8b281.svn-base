@@ -1,0 +1,421 @@
+<script type="text/javascript" src="<?= base_url() ?>js/jquery.ajaxupload.js"></script>
+<style>
+    .slider_heading {
+        padding: 3px !important;
+        background-color: rgb(0, 114, 188) !important;
+        background-image: linear-gradient(141deg, #436e05 0%, #00c40ccc 51%, #1c6e05 75%) !important;
+        border: solid transparent;
+    }
+
+    .container {
+        width: 94%;
+        /* Set the width of the container */
+        margin: 0 auto;
+        /* Center the container horizontally */
+        padding: 20px;
+        /* Add some padding inside the container */
+        background-color: #f0f0f0;
+        /* Set a background color */
+        border: 1px solid #ccc;
+        /* Add a border around the container */
+        border-radius: 5px;
+        /* Add rounded corners */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        /* Add a subtle box shadow */
+        margin-top: 1rem;
+    }
+
+    /* Reset default table styles */
+    .form-table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .form-table td {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    /* Style labels */
+    .form-table label {
+        font-weight: bold;
+    }
+
+    /* Style input fields */
+    .form-table input[type="text"],
+    .form-table input[type="email"],
+    .form-table textarea {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        /* Ensure padding doesn't affect the width */
+    }
+
+    /* Style submit button */
+    .form-table button[type="submit"] {
+        padding: 8px 16px;
+        background-color: #4caf50;
+    }
+
+    .save_button {
+        /* Define your styles here */
+        background-color: #4CAF50;
+        /* Green */
+        border: none;
+        color: white;
+        padding: 5px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 10px;
+    }
+</style>
+
+
+
+<script type="text/javascript">
+    var csrf_token = '';
+    var theme = getDemoTheme();
+
+    jQuery(document).ready(function() {
+        default_add_more_content();
+        jQuery("#certificate_receipt_date").val('<?= $row->certificate_receipt_date != '00/00/0000' ? $row->certificate_receipt_date : '' ?>');
+        jQuery("#valuation_date_branch").val('<?= $row->valuation_date_branch != '00/00/0000' ? $row->valuation_date_branch : '' ?>');
+        jQuery("#valuation_date_surveyor").val('<?= $row->valuation_date_surveyor != '00/00/0000' ? $row->valuation_date_surveyor : '' ?>');
+
+    });
+
+    function call_ajax_submit() {
+        var postData = jQuery('#form').serialize();
+        jQuery.ajax({
+            type: "POST",
+            cache: false,
+            async: false,
+            url: '<?= base_url() ?>index.php/legal_file_process/add_edit_action',
+            data: postData,
+            datatype: "json",
+            success: function(response) {
+                var json = jQuery.parseJSON(response);
+                window.parent.jQuery('.txt_csrfname').val(json.csrf_token);
+                jQuery('.txt_csrfname').val(json.csrf_token);
+                if (json.Message != 'OK') {
+                    alert(json.Message);
+                    window.top.EOL.messageBoard.close();
+                } else {
+                    window.parent.jQuery("#error").show();
+                    window.parent.jQuery("#error").fadeOut(11500);
+                    window.parent.jQuery("#error").html('<img align="absmiddle" src="' + baseurl + 'images/drag.png" border="0" /> &nbsp;Successfully Update');
+                    window.top.EOL.messageBoard.close();
+                }
+            }
+        });
+
+    }
+
+    function CustomerPickList(module_name = null, data_field_name = null) {
+        if (jQuery("#add_edit").val() == 'edit') {
+            if (jQuery("#file_delete_value_" + data_field_name).val() == 0) {
+                alert('Please Delete Previous file for new upload');
+                return false;
+            }
+        }
+        newwindow = window.open("<?= base_url() ?>index.php/home/ajaxFileUpload/" + module_name + '/' + data_field_name, "Upload", "width=550,height=350,resizable=0,scrollbars=0,location=no,menubar=no,toolbar=no,minimizable=no,status=no,top=140,left=340");
+        if (window.focus) {
+            newwindow.focus()
+        }
+        return false;
+    }
+
+    function default_add_more_content() {
+
+        var generate_html = '';
+        var new_counter = 1;
+        generate_html = '';
+        generate_html += '<tr id="generate_info_' + new_counter + '">';
+        generate_html += '<td style="text-align:center">';
+        generate_html += '<input type="hidden" id="generate_info_edit_' + new_counter + '" name="generate_info_edit_' + new_counter + '" value="0">';
+        generate_html += '<input type="hidden" id="generate_info_delete_' + new_counter + '" name="generate_info_delete_' + new_counter + '" value="0">';
+        generate_html += '';
+        generate_html += '</td>';
+
+        generate_html += '<td><input type="text" id="titel_' + new_counter + '" name="titel_' + new_counter + '"></td>';
+
+        generate_html += '<td style="text-align:center"><img style="cursor:pointer" src="<?= base_url() ?>/images/upload.png" alt="upload" title="Upload" onclick="CustomerPickList(\'cma\',\'file_upload_name_' + new_counter + '\')"/>';
+        generate_html += '<input type="hidden" id="hidden_file_upload_name_' + new_counter + '_select" name="hidden_file_upload_name_' + new_counter + '_select" value="0">';
+        generate_html += '<span id="hidden_file_upload_name_' + new_counter + '">';
+        generate_html += '<span id="file_upload_name_' + new_counter + '" name="file_upload_name_' + new_counter + '"></span> </td>';
+        generate_html += '</tr>';
+        jQuery('#file_upload_body').html(generate_html);
+        jQuery('#generate_info_counter').val(new_counter);
+    }
+
+    function add_more_content() {
+
+        if (jQuery('#add_edit').val() == 'add') {
+            var counter = jQuery('#generate_info_counter').val();
+        } else {
+            var counter = jQuery('#generate_info_counter_edit').val();
+        }
+        var new_counter = parseInt(counter) + 1;
+        html_string = '';
+
+        html_string += '<tr id="generate_info_' + new_counter + '">';
+        html_string += '<td style="text-align:center">';
+        html_string += '<input type="hidden" id=" generate_info_edit_' + new_counter + '" name=" generate_info_edit_' + new_counter + '" value="0">';
+        html_string += '<input type="hidden" id=" generate_info_delete_' + new_counter + '" name=" generate_info_delete_' + new_counter + '" value="0">';
+        html_string += '<img src="<?= base_url() ?>images/delete-New.png" onclick="delete_row_generate(' + new_counter + ')" style="margin-top: 5px;cursor:pointer;">';
+        html_string += '</td>';
+
+        html_string += '<td><input type="text" id="titel_' + new_counter + '" name="titel_' + new_counter + '"></td>';
+
+
+        html_string += '<td style="text-align:center"><img style="cursor:pointer" src="<?= base_url() ?>/images/upload.png" alt="upload" title="Upload" onclick="CustomerPickList(\'cma\',\'file_upload_name_' + new_counter + '\')"/>';
+        html_string += '<input type="hidden" id="hidden_file_upload_name_' + new_counter + '_select" name="hidden_file_upload_name_' + new_counter + '_select" value="0">';
+        html_string += '<span id="hidden_file_upload_name_' + new_counter + '">';
+        html_string += '<span id="file_upload_name_' + new_counter + '" name="file_upload_name_' + new_counter + '"></span> </td>';
+        jQuery('#generate_info_' + counter).after(html_string);
+        if (jQuery('#add_edit').val() == 'add') {
+            jQuery('#generate_info_counter').val(new_counter);
+        }
+        if (jQuery('#add_edit').val() == 'edit') {
+            jQuery('#generate_info_counter_edit').val(new_counter);
+        }
+    }
+
+    function delete_row_generate(row_id) {
+        jQuery('#generate_info_' + row_id).hide();
+        jQuery('#generate_info_delete_' + row_id).val(1);
+    }
+
+    function file_delete(id) {
+        if (confirm('Are you sure to Delete previous file?')) {
+            jQuery("#file_preview_" + id).hide();
+            jQuery("#file_delete_" + id).hide();
+            jQuery("#file_delete_value_" + id).val(1);
+        }
+    }
+</script>
+
+<body>
+    <div class="slider_heading" style="height:30px;font-size:22px;padding:5px 0 0 10px;color:white">
+        <strong>Add Additional Info Add 33/5 And 33/7</strong>
+    </div>
+    <div class="container">
+        <form name="form" id="form" class="form" method="post" action="" enctype="multipart/form-data">
+            <input type="hidden" class="txt_csrfname" name="<?php echo $this->security->get_csrf_token_name(); ?>" value="<?php echo $this->security->get_csrf_hash(); ?>" />
+            <input type="hidden" name="add_edit" id="add_edit" value="<?php echo (count($row_generate) != 0) ? 'edit' : 'add'; ?>">
+
+            <input type="hidden" name="edit_row" id="edit_row" value="<?= $id ?>">
+
+            <table class="form-table">
+                <tr>
+                    <td style="width: 40rem;"><label for="customer_name">Title Customer/Institution/Company Name:</label></td>
+                    <td><strong><?= $row->ac_name ?></strong></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="proprietor_info">Name and Mobile Number of Proprietor/Owner:</label></td>
+                    <td><textarea id="proprietor_info" name="proprietor_info"><?= $row->proprietor_info ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="money_loan_case">Mobile Number Money Loan Case Number & Date:</label></td>
+                    <td><strong><?= $row->filling_date ?></strong> (<strong><?= $row->case_number ?></strong>)</td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="suit_value_money_lending">Suit value in money-lending cases:</label></td>
+                    <td><strong><?= $row->case_claim_amount ?></strong></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="lawyer_info">Name and mobile number of the lawyer handling the case:</label></td>
+                    <td><textarea id="lawyer_info" name="lawyer_info"><?= $row->lawyer_info ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="decree_info">Date of decree and amount of money decreed:</label></td>
+                    <td><textarea id="decree_info" name="decree_info"><?= $row->decree_info ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="finance_case_info">Finance case number and date:</label></td>
+                    <td>demo</td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="suit_value_monetary">Suit value in monetary cases:</label></td>
+                    <td>demo</td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="write_off_statement">Statement regarding Write Off:</label></td>
+                    <td><textarea id="write_off_statement" name="write_off_statement"><?= $row->write_off_statement ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="adjustment_info">Section 33(1) or 33(4) of the Debt Courts Act, 2003 describes information relating to adjustment of liabilities by auction sale through court.:</label></td>
+                    <td><textarea id="adjustment_info" name="adjustment_info"><?= $row->adjustment_info ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="certificate_receipt_date">Date of receipt of certificate under section 33(5) or 33(7) of the Credit Courts Act, 2003:</label></td>
+                    <td>
+                        <input style="width:250px" name="certificate_receipt_date" id="certificate_receipt_date" type="text" class="text-input" placeholder="dd/mm/yyyy">
+                        <script type="text/javascript">
+                            datePicker("certificate_receipt_date");
+                        </script>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="">A continuous description of the schedule of the property and the latest market value and immediate selling price (if the property is defective, its description should be mentioned):</label></td>
+                    <td>
+                        <table class="form-table">
+                            <thead>
+                                <tr>
+                                    <th>D</th>
+                                    <th style="width:250px;">Title</th>
+                                    <th>Upload File</th>
+                                </tr>
+                            </thead>
+                    
+
+
+                            <?php $total_row = count($row_generate);
+                            if ($total_row != 0) { ?>
+
+                                <?php $counter = 1;
+                                foreach ($row_generate as  $item) {
+                                    $row_count = count($row_generate);
+                                ?>
+                                        <tr id="generate_info_<?= $counter ?>">
+                                            <td style="text-align:center">
+                                                <input type="hidden" id="generate_info_edit_<?= $counter ?>" name="generate_info_edit_<?= $counter ?>" value="<?= $item->id; ?>">
+                                                <input type="hidden" id="generate_info_delete_<?= $counter ?>" name="generate_info_delete_<?= $counter ?>" value="0">
+                                                <?php if ($counter > 1) : ?>
+                                                    <img src="<?= base_url() ?>images/delete-New.png" onclick="delete_row_generate(<?= $counter ?>)" style="margin-top: 5px;cursor:pointer;">
+                                                <?php endif ?>
+                                            </td>
+                                            <td style="text-align:center"><input name="titel_<?= $counter ?>" type="text" value="<?= $item->title; ?>" id="titel_<?= $counter ?>" /> </td>
+                                            <td style="width:30%">
+                                                <img style="cursor:pointer" src="<?= base_url() ?>/images/upload" alt="upload" title="Upload" onclick="CustomerPickList('cma','file_upload_name_<?= $counter ?>')" />
+                                                <input type="hidden" id="hidden_file_upload_name_<?= $counter ?>_select" name="hidden_file_upload_name_<?= $counter ?>_select" value="0">
+                                                <? if ($item->file != '') { ?>
+
+                                                    <span id="hidden_file_upload_name_<?= $counter ?>"><img id="file_preview_file_upload_name_<?= $counter ?>" onclick="popup('<?= base_url() ?>/uploads/suit_filling_info/<?= $item->file ?>')" style="cursor:pointer;text-align:center;padding-left:5px;" src="<?= base_url() ?>images/printpreview.png"></span>
+                                                    <input type="hidden" id="hidden_file_upload_name_<?= $counter ?>_value" name="hidden_file_upload_name_<?= $counter ?>_value" value="<?= $item->file ?>">
+                                                    <img id="file_delete_file_upload_name_<?= $counter ?>" onclick="file_delete('file_upload_name_<?= $counter ?>')" src="<?= base_url() ?>images/delete-New.png" style=" cursor:pointer;" alt="Delete" title="Delete">
+                                                    <input type="hidden" id="file_delete_value_file_upload_name_<?= $counter ?>" name="file_delete_value_file_upload_name_<?= $counter ?>" value="0">
+                                                <? } else { ?>
+                                                    <span id="hidden_file_upload_name_<?= $counter ?>"></span>
+                                                <? } ?>
+                                            </td>
+                                        <tr>
+                                        <?php $counter++;?>
+                                <?php } ?>
+                                
+                                <input type="hidden" name="generate_info_counter_edit" id="generate_info_counter_edit" value="<?= $total_row ?>">
+
+                            <?php  } else { ?>
+                                <input type="hidden" name="generate_info_counter" id="generate_info_counter" value="1">
+                                <tbody id="file_upload_body"></tbody>
+                            <?php } ?>
+
+
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" style="text-align: right;"> <button type="button" onclick="add_more_content();" style="cursor:pointer;">Add More</button></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="valuation_date_branch">Valuation and Date of Gross Assets by Branch (MV & FSV):</label></td>
+                    <td>
+                        <input style="width:250px" name="valuation_date_branch" id="valuation_date_branch" type="text" class="text-input" placeholder="dd/mm/yyyy">
+                        <script type="text/javascript">
+                            datePicker("valuation_date_branch");
+                        </script>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="valuation_date_surveyor">Valuation & Date of Gross Property by Surveyor (MV &OFSV):</label></td>
+                    <td>
+                        <input style="width:250px" name="valuation_date_surveyor" id="valuation_date_surveyor" type="text" class="text-input" placeholder="dd/mm/yyyy">
+                        <script type="text/javascript">
+                            datePicker("valuation_date_surveyor");
+                        </script>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="defect_description">Description of any defect in the property if any:</label></td>
+                    <td><textarea id="defect_description" name="defect_description"><?= $row->defect_description ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="market_value_selling_price">Latest market value and immediate selling price of remaining property excluding defective property:</label></td>
+                    <td><textarea id="market_value_selling_price" name="market_value_selling_price"><?= $row->market_value_selling_price ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="deeds_possession_mutation">Statement regarding execution of deeds, possession and mutation in respect of property acquired under section 33(7).:</label></td>
+                    <td><textarea id="deeds_possession_mutation" name="deeds_possession_mutation"><?= $row->deeds_possession_mutation ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="possession_statement">33 (5) statement of possession in respect of property acquired under section:</label></td>
+                    <td><textarea id="possession_statement" name="possession_statement"><?= $row->possession_statement ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="money_transfer_statement">2nd/3rd money transfer case filed Statement (to be filed within 6 years of filing of 1st issue case):</label></td>
+                    <td><textarea id="money_transfer_statement" name="money_transfer_statement"><?= $row->money_transfer_statement ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="auction_activity_description">Description of the activities undertaken by the Branch to settle liabilities by auctioning assets:</label></td>
+                    <td><textarea id="auction_activity_description" name="auction_activity_description"><?= $row->auction_activity_description ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="">Actual Amount of Current Total Liabilities:</label></td>
+                    <td>
+                        <table class="form-table">
+                            <tr>
+                                <td><strong>Costs:</strong></td>
+                                <td><input type="text" name="costs" id="costs" value="<?= $row->costs ?>"></td>
+                                <td><strong>Profit:</strong></td>
+                                <td><input type="text" name="profit" id="profit" value="<?= $row->profit ?>"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Compensation imposed:</strong></td>
+                                <td><input type="text" name="compensation_imposed" id="compensation_imposed" value="<?= $row->compensation_imposed ?>"></td>
+                                <td><strong>Unclaimed Compensation:</strong></td>
+                                <td><input type="text" name="unclaimed_compensation" id="unclaimed_compensation" value="<?= $row->unclaimed_compensation ?>"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cost of litigation:</strong></td>
+                                <td><input type="text" name="cost_of_litigation" id="cost_of_litigation" value="<?= $row->cost_of_litigation ?>"></td>
+                                <td><strong>Other Expenses:</strong></td>
+                                <td><input type="text" name="other_expenses" id="other_expenses" value="<?= $row->other_expenses ?>"></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="description_of_property">Description of property obtained under section 33(7) if converted into Non-Banking Asset</label></td>
+                    <td><textarea id="description_of_property" name="description_of_property"><?= $row->description_of_property ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="latest_steps_taken">Latest steps taken by the branch to recover/consolidate the total dues of the bank</label></td>
+                    <td><textarea id="latest_steps_taken" name="latest_steps_taken"><?= $row->latest_steps_taken ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="directions_and_advice">Directions and advice to branches and activities undertaken by LAD at Head Office</label></td>
+                    <td><textarea id="directions_and_advice" name="directions_and_advice"><?= $row->directions_and_advice ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="management_decision">Advice and decision of the management authority of the bank for the purpose of collection of dues/liabilities of the bank</label></td>
+                    <td><textarea id="management_decision" name="management_decision"><?= $row->management_decision ?></textarea></td>
+                </tr>
+                <tr>
+                    <td style="width: 40rem;"><label for="comments">Comments (if any)</label></td>
+                    <td><textarea id="comments" name="comments"><?= $row->comments ?></textarea></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: center;"> <button type="button" onclick="call_ajax_submit();" class="save_button">Save</button> </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</body>
